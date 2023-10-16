@@ -3,6 +3,9 @@ package com.swk.commerce.product
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import jakarta.annotation.PostConstruct
+import org.springframework.core.io.Resource
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.amqp.rabbit.annotation.RabbitListener
@@ -10,6 +13,10 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 
 data class Product(
     val id: Long,
@@ -19,7 +26,7 @@ data class Product(
     val category: String,
     val productDescription: String,
     val isActive: Boolean,
-    val imageByteArrayList: List<String>
+    val imageUuidName: List<String>
 )
 
 
@@ -33,13 +40,17 @@ object Products: Table() {
     val isActive = bool("is_active")
     override val primaryKey = PrimaryKey(id)
 }
+object ProductImages:Table() {
+    val productId = reference("product_id", Products.id)
+    val uuidFileName = varchar("uuid", 100).uniqueIndex()
+}
 
 @Configuration
 class PostTableSetup(private val database: Database) {
     @PostConstruct
     fun migrateSchema() {
         transaction(database) {
-            SchemaUtils.createMissingTablesAndColumns(Products)
+            SchemaUtils.createMissingTablesAndColumns(Products,ProductImages)
         }
     }
 }
@@ -48,6 +59,7 @@ class PostTableSetup(private val database: Database) {
 class ProductService(private val productClient: ProductClient,
     private val redisTemplate: RedisTemplate<String,String>) {
     private val mapper = jacksonObjectMapper()
+    private val FILE_PATH = "files/product"
 
     @Scheduled(fixedRate = 1000 * 60 * 60)
     fun scheduledFetchTopFavoriteProduct() {
@@ -104,17 +116,47 @@ class ProductService(private val productClient: ProductClient,
 
     @RabbitListener(queues = ["product-register"])
     fun handleProductData(productData : String) {
-        val result:Product = mapper.readValue(productData)
-        println("Findstart")
-        val findProduct = Products.select {
-            Products.id eq result.id
+        val dirPath:Path = Paths.get(FILE_PATH)
+        if(!Files.exists(dirPath)) {
+            Files.createDirectories(dirPath)
         }
-        println("Findfinish")
+        val filesList = mutableListOf<String>()
 
-        println("insertstart")
+        val result:Product = mapper.readValue(productData)
+
+        runBlocking {
+            result.imageUuidName.forEach {
+                launch {
+                    val resource: Resource = productClient.getProductImage(it)
+                    val uuidFilePath = dirPath.resolve(it)
+                    Files.copy(resource.inputStream, uuidFilePath,StandardCopyOption.REPLACE_EXISTING)
+                    filesList.add(it)
+                }
+            }
+        }
+
+        println(filesList)
+
+        val findProduct = Products.select{Products.id eq result.id}
+
         transaction {
-            if(findProduct.empty()){
-                Products.insert {
+            if(findProduct.empty()) {
+                val insertedProduct = Products.insert {
+                    it[id] = result.id
+                    it[productBrand] = result.productBrand
+                    it[productName] = result.productName
+                    it[productPrice] = result.productPrice
+                    it[category] = result.category
+                    it[productDescription] = result.productDescription
+                    it[isActive] = result.isActive
+                }.resultedValues!!.first()
+
+                ProductImages.batchInsert(filesList) {
+                    this[ProductImages.productId] = insertedProduct[Products.id]
+                    this[ProductImages.uuidFileName] = it
+                }
+            } else {
+                val updateProduct = Products.update({Products.id eq result.id}){
                     it[id] = result.id
                     it[productBrand] = result.productBrand
                     it[productName] = result.productName
@@ -123,20 +165,9 @@ class ProductService(private val productClient: ProductClient,
                     it[productDescription] = result.productDescription
                     it[isActive] = result.isActive
                 }
-            } else {
-                Products.update({Products.id eq result.id}) {
-                    it[productBrand] = result.productBrand
-                    it[productName] = result.productName
-                    it[productPrice] = result.productPrice
-                    it[category] = result.category
-                    it[productDescription] = result.productDescription
-                    it[isActive] = result.isActive
-                }
             }
+
         }
-
-        println("insertfinish")
-
 
     }
 }

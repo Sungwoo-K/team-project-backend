@@ -1,7 +1,9 @@
 package com.swk.commerce.product
 
+import org.springframework.core.io.Resource
 import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 
 data class TopFavoriteProduct(
     val id:Long,
@@ -10,9 +12,12 @@ data class TopFavoriteProduct(
     val image: String
 )
 
-@FeignClient(name = "productClient", url = "http://192.168.100.151:8081")
+@FeignClient(name = "productClient", url = "http://192.168.100.151:8080")
 interface ProductClient {
 
-    @GetMapping
+    @GetMapping("/alsdkmfalskdf")
     fun getTopFavoriteProduct() : List<TopFavoriteProduct>
+
+    @GetMapping("/product/files/{dynamicPart}")
+    fun getProductImage(@PathVariable dynamicPart:String) : Resource
 }
