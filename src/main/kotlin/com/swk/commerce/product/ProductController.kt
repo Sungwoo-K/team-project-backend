@@ -1,20 +1,41 @@
 package com.swk.commerce.product
 
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.core.io.ResourceLoader
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.nio.file.Files
 import java.nio.file.Paths
+
+
+
+
 
 @RestController
 @RequestMapping("/product")
 class ProductController(private val productService: ProductService, private val resourceLoader: ResourceLoader) {
     private val FILE_PATH = "files/product"
+
+    @GetMapping("/payment")
+    fun sendPayment(@RequestBody payment: Payment) {
+
+        transaction {
+            val result = Orders.insert {
+                it[this.userId] = 1
+                it[this.isPermission] = "wait"
+                it[this.productId] = payment.productId
+            }.resultedValues!!.first()
+
+            val paymentRequest = PaymentRequest(result[Orders.id],1, payment.productId, payment.quantity, payment.address)
+
+            productService.sendProductPayment(paymentRequest)
+        }
+
+
+    }
 
     @GetMapping("/top-favorite")
     fun getTopFavoriteProducts(@RequestParam category : String): List<TopFavoriteProduct> {

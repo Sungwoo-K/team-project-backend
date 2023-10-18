@@ -2,14 +2,13 @@ package com.swk.commerce.product
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import jakarta.annotation.PostConstruct
 import org.springframework.core.io.Resource
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.amqp.rabbit.annotation.RabbitListener
-import org.springframework.context.annotation.Configuration
+import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -18,46 +17,11 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 
-data class Product(
-    val id: Long,
-    val productBrand: String,
-    val productName: String,
-    val productPrice: Long,
-    val category: String,
-    val productDescription: String,
-    val isActive: Boolean,
-    val imageUuidName: List<String>
-)
-
-
-object Products: Table() {
-    val id = long("id")
-    val productBrand = varchar("product_brand", 100)
-    val productName = varchar("product_name", 100)
-    val productPrice = long("product_price")
-    val category = varchar("category", 100)
-    val productDescription = text("product_description")
-    val isActive = bool("is_active")
-    override val primaryKey = PrimaryKey(id)
-}
-object ProductImages:Table() {
-    val productId = reference("product_id", Products.id)
-    val uuidFileName = varchar("uuid", 100).uniqueIndex()
-}
-
-@Configuration
-class PostTableSetup(private val database: Database) {
-    @PostConstruct
-    fun migrateSchema() {
-        transaction(database) {
-            SchemaUtils.createMissingTablesAndColumns(Products,ProductImages)
-        }
-    }
-}
 
 @Service
 class ProductService(private val productClient: ProductClient,
-    private val redisTemplate: RedisTemplate<String,String>) {
+    private val redisTemplate: RedisTemplate<String,String>,
+    private val rabbitTemplate: RabbitTemplate) {
     private val mapper = jacksonObjectMapper()
     private val FILE_PATH = "files/product"
 
@@ -156,7 +120,7 @@ class ProductService(private val productClient: ProductClient,
                     this[ProductImages.uuidFileName] = it
                 }
             } else {
-                val updateProduct = Products.update({Products.id eq result.id}){
+                Products.update({Products.id eq result.id}){
                     it[id] = result.id
                     it[productBrand] = result.productBrand
                     it[productName] = result.productName
@@ -170,4 +134,22 @@ class ProductService(private val productClient: ProductClient,
         }
 
     }
+
+    @RabbitListener(queues = ["product-payment-result"])
+    fun handlePaymentResultData(productData : String) {
+        println(productData)
+        val result:PaymentResult = mapper.readValue(productData)
+        println(result)
+        transaction {
+            Orders.update({ Orders.id eq result.orderId }) {
+                it[isPermission] = result.isPermission
+            }
+        }
+    }
+
+    fun sendProductPayment(paymentRequest: PaymentRequest){
+        val mappingPaymentRequest = mapper.writeValueAsString(paymentRequest)
+        rabbitTemplate.convertAndSend("product-payment", mappingPaymentRequest)
+    }
+
 }
