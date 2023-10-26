@@ -113,6 +113,8 @@ class ProductService(private val productClient: ProductClient,
                     it[category] = result.category
                     it[productDescription] = result.productDescription
                     it[isActive] = result.isActive
+                    it[maximumPurchaseQuantity] = result.maximumPurchaseQuantity
+                    it[discountRate] = result.discountRate
                 }.resultedValues!!.first()
 
                 ProductImages.batchInsert(filesList) {
@@ -128,6 +130,8 @@ class ProductService(private val productClient: ProductClient,
                     it[category] = result.category
                     it[productDescription] = result.productDescription
                     it[isActive] = result.isActive
+                    it[maximumPurchaseQuantity] = result.maximumPurchaseQuantity
+                    it[discountRate] = result.discountRate
                 }
             }
 
@@ -137,7 +141,6 @@ class ProductService(private val productClient: ProductClient,
 
     @RabbitListener(queues = ["product-payment-result"])
     fun handlePaymentResultData(productData : String) {
-        println(productData)
         val result:PaymentResult = mapper.readValue(productData)
         println(result)
         transaction {

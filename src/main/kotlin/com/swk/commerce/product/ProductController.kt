@@ -27,6 +27,7 @@ class ProductController(private val productService: ProductService, private val 
                 it[this.userId] = 1
                 it[this.isPermission] = "wait"
                 it[this.productId] = payment.productId
+                it[this.quantity] = payment.quantity
             }.resultedValues!!.first()
 
             val paymentRequest = PaymentRequest(result[Orders.id],1, payment.productId, payment.quantity, payment.address)

@@ -15,6 +15,8 @@ data class Product(
     val category: String,
     val productDescription: String,
     val isActive: Boolean,
+    val maximumPurchaseQuantity: Int,
+    val discountRate:Int,
     val imageUuidName: List<String>
 )
 

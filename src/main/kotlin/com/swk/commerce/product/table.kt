@@ -12,6 +12,7 @@ object Orders: Table() {
     val userId = long("user_id")
     val isPermission = varchar("is_permission", 30)
     val productId = reference("product_id", Products.id)
+    val quantity = integer("quantity")
     override val primaryKey = PrimaryKey(id)
 }
 
@@ -23,6 +24,8 @@ object Products: Table() {
     val category = varchar("category", 100)
     val productDescription = text("product_description")
     val isActive = bool("is_active")
+    val maximumPurchaseQuantity = integer("maximum_purchase_quantity")
+    val discountRate = integer("discountRate")
     override val primaryKey = PrimaryKey(id)
 }
 object ProductImages:Table() {

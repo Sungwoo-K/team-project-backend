@@ -43,6 +43,9 @@ dependencies {
 	implementation("org.jetbrains.exposed:exposed-json:$exposedVersion")
 	implementation("org.jetbrains.exposed:exposed-money:$exposedVersion")
 	implementation("org.jetbrains.exposed:exposed-spring-boot-starter:$exposedVersion")
+
+	implementation("com.auth0:java-jwt:4.4.0")
+	implementation("at.favre.lib:bcrypt:0.10.2")
 }
 
 dependencyManagement {
