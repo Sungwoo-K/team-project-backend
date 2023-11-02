@@ -26,6 +26,7 @@ object Products: Table() {
     val isActive = bool("is_active")
     val maximumPurchaseQuantity = integer("maximum_purchase_quantity")
     val discountRate = integer("discountRate")
+    val mainImageUuidName =  varchar("main_image_uuid_name", 100)
     override val primaryKey = PrimaryKey(id)
 }
 object ProductImages:Table() {

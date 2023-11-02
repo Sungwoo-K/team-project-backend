@@ -89,7 +89,8 @@ class ProductService(private val productClient: ProductClient,
         val result:Product = mapper.readValue(productData)
 
         runBlocking {
-            result.imageUuidName.forEach {
+            val imageUuidNames = result.imageUuidName + listOf(result.mainImageUuidName)
+            imageUuidNames.forEach {
                 launch {
                     val resource: Resource = productClient.getProductImage(it)
                     val uuidFilePath = dirPath.resolve(it)
@@ -115,6 +116,7 @@ class ProductService(private val productClient: ProductClient,
                     it[isActive] = result.isActive
                     it[maximumPurchaseQuantity] = result.maximumPurchaseQuantity
                     it[discountRate] = result.discountRate
+                    it[mainImageUuidName] = result.mainImageUuidName
                 }.resultedValues!!.first()
 
                 ProductImages.batchInsert(filesList) {
