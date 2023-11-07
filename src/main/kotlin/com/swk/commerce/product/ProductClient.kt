@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable
 @FeignClient(name = "productClient", url = "http://192.168.100.151:8080")
 interface ProductClient {
 
-    @GetMapping("/alsdkmfalskdf")
+    @GetMapping("/product/topFiveProduct")
     fun getTopFavoriteProduct() : List<TopFavoriteProduct>
 
     @GetMapping("/product/files/{dynamicPart}")

@@ -29,28 +29,28 @@ class ProductService(private val productClient: ProductClient,
     fun scheduledFetchTopFavoriteProduct() {
         val result = productClient.getTopFavoriteProduct();
 
-        val topTent:MutableList<TopFavoriteProduct> = mutableListOf()
-        val topTable:MutableList<TopFavoriteProduct> = mutableListOf()
-        val topTableware:MutableList<TopFavoriteProduct> = mutableListOf()
-        val topAccessory:MutableList<TopFavoriteProduct> = mutableListOf()
-        val topOther:MutableList<TopFavoriteProduct> = mutableListOf()
+        lateinit var topTent:List<Long>
+        lateinit var topTable:List<Long>
+        lateinit var topTableware:List<Long>
+        lateinit var topAccessory:List<Long>
+        lateinit var topOther:List<Long>
 
         println(result)
         for(product in result) {
             if(product.category === "tent") {
-                topTent.add(product)
+                topTent = product.ids;
             }
             if(product.category === "table" ) {
-                topTable.add(product)
+                topTable = product.ids
             }
             if(product.category === "tableware" ) {
-                topTableware.add(product)
+                topTableware = product.ids
             }
             if(product.category === "accessory" ) {
-                topAccessory.add(product)
+                topAccessory = product.ids
             }
             if(product.category === "other") {
-                topOther.add(product)
+                topOther = product.ids
             }
         }
 
@@ -67,16 +67,6 @@ class ProductService(private val productClient: ProductClient,
         redisTemplate.opsForValue().multiSet(keyValuesToAdd)
     }
 
-    fun getTopFavoriteProduct(findProductByKey:String) : List<TopFavoriteProduct> {
-        val result = redisTemplate.opsForValue().get(findProductByKey)
-        if(result != null) {
-            val list : List<TopFavoriteProduct> = mapper.readValue(result)
-            return list
-        } else {
-            return listOf()
-        }
-    }
-
 
     @RabbitListener(queues = ["product-register"])
     fun handleProductData(productData : String) {
@@ -88,14 +78,17 @@ class ProductService(private val productClient: ProductClient,
 
         val result:Product = mapper.readValue(productData)
 
-        runBlocking {
-            val imageUuidNames = result.imageUuidName + listOf(result.mainImageUuidName)
-            imageUuidNames.forEach {
-                launch {
-                    val resource: Resource = productClient.getProductImage(it)
-                    val uuidFilePath = dirPath.resolve(it)
-                    Files.copy(resource.inputStream, uuidFilePath,StandardCopyOption.REPLACE_EXISTING)
-                    filesList.add(it)
+        if(result.mainImageUuidName !== "") {
+
+            runBlocking {
+                val imageUuidNames = result.imageUuidName + listOf(result.mainImageUuidName)
+                imageUuidNames.forEach {
+                    launch {
+                        val resource: Resource = productClient.getProductImage(it)
+                        val uuidFilePath = dirPath.resolve(it)
+                        Files.copy(resource.inputStream, uuidFilePath, StandardCopyOption.REPLACE_EXISTING)
+                        filesList.add(it)
+                    }
                 }
             }
         }
@@ -126,11 +119,9 @@ class ProductService(private val productClient: ProductClient,
             } else {
                 Products.update({Products.id eq result.id}){
                     it[id] = result.id
-                    it[productBrand] = result.productBrand
                     it[productName] = result.productName
                     it[productPrice] = result.productPrice
                     it[category] = result.category
-                    it[productDescription] = result.productDescription
                     it[isActive] = result.isActive
                     it[maximumPurchaseQuantity] = result.maximumPurchaseQuantity
                     it[discountRate] = result.discountRate

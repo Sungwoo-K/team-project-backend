@@ -1,10 +1,8 @@
 package com.swk.commerce.product
 
 data class TopFavoriteProduct(
-    val id:Long,
-    val name: String,
-    val category:String,
-    val image: String
+    val ids:List<Long>,
+    val category:String
 )
 
 data class Product(
