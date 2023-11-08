@@ -20,8 +20,7 @@ import java.nio.file.StandardCopyOption
 
 @Service
 class ProductService(private val productClient: ProductClient,
-    private val redisTemplate: RedisTemplate<String,String>,
-    private val rabbitTemplate: RabbitTemplate) {
+    private val redisTemplate: RedisTemplate<String,String>) {
     private val mapper = jacksonObjectMapper()
     private val FILE_PATH = "files/product"
 

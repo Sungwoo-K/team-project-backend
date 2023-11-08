@@ -213,4 +213,24 @@ class ProductController(private val productService: ProductService, private val 
         val resource = resourceLoader.getResource("file:$file")
         return ResponseEntity.ok().contentType(mediaType).body(resource)
     }
+
+    @GetMapping("/files/main-image/{id}")
+    fun getFileMainImage(@PathVariable id:Long) : ResponseEntity<Any> = transaction(
+        Connection.TRANSACTION_READ_UNCOMMITTED,readOnly = true
+    ) {
+        val result = Products.select(Products.id eq id).map {
+            it[Products.mainImageUuidName]
+        }.singleOrNull()
+
+        val file = Paths.get("$FILE_PATH/$result").toFile()
+        if (!file.exists()) {
+            return@transaction ResponseEntity.notFound().build()
+        }
+
+        val mimeType = Files.probeContentType(file.toPath())
+        val mediaType = MediaType.parseMediaType(mimeType)
+
+        val resource = resourceLoader.getResource("file:$file")
+        return@transaction ResponseEntity.ok().contentType(mediaType).body(resource)
+    }
 }
