@@ -49,6 +49,12 @@ class ProductController(private val productService: ProductService, private val 
             )
         }.singleOrNull()
 
+        val images = ProductImages.select(ProductImages.productId eq id).map {
+            it[ProductImages.uuidFileName]
+        }
+
+        result?.imageUuidName = images;
+
         return@transaction ResponseEntity.status(HttpStatus.OK).body(result);
     }
 

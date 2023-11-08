@@ -16,24 +16,5 @@ data class Product(
     val maximumPurchaseQuantity: Int,
     val discountRate:Int,
     val mainImageUuidName : String,
-    val imageUuidName: List<String>
-)
-
-data class Payment(
-    val productId: Long,
-    val quantity: Int,
-    val address: String
-)
-
-data class PaymentRequest(
-    val orderId: Long,
-    val userId: Long,
-    val productId: Long,
-    val quantity: Int,
-    val address:String
-)
-
-data class PaymentResult(
-    val orderId: Long,
-    val isPermission: String
+    var imageUuidName: List<String>
 )

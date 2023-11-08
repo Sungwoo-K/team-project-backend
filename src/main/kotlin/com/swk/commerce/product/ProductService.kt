@@ -131,21 +131,5 @@ class ProductService(private val productClient: ProductClient,
         }
 
     }
-
-    @RabbitListener(queues = ["product-payment-result"])
-    fun handlePaymentResultData(productData : String) {
-        val result:PaymentResult = mapper.readValue(productData)
-        println(result)
-        transaction {
-            Orders.update({ Orders.id eq result.orderId }) {
-                it[isPermission] = result.isPermission
-            }
-        }
-    }
-
-    fun sendProductPayment(paymentRequest: PaymentRequest){
-        val mappingPaymentRequest = mapper.writeValueAsString(paymentRequest)
-        rabbitTemplate.convertAndSend("product-payment", mappingPaymentRequest)
-    }
-
 }
+
