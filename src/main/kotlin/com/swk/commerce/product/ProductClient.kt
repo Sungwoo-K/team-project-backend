@@ -16,3 +16,5 @@ interface ProductClient {
     @GetMapping("/product/files/{dynamicPart}")
     fun getProductImage(@PathVariable dynamicPart:String) : Resource
 }
+
+

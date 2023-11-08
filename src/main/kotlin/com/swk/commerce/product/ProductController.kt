@@ -25,7 +25,7 @@ import java.sql.Connection
 
 @RestController
 @RequestMapping("/product")
-class ProductController(private val productService: ProductService, private val resourceLoader: ResourceLoader, private val redisTemplate: RedisTemplate<String,String>) {
+class ProductController(private val resourceLoader: ResourceLoader, private val redisTemplate: RedisTemplate<String,String>) {
     private val FILE_PATH = "files/product"
     private val mapper = jacksonObjectMapper()
 
@@ -162,11 +162,6 @@ class ProductController(private val productService: ProductService, private val 
     fun getTopFavoriteProducts(): ResponseEntity<List<Map<String,List<Product>>>> = transaction(
         Connection.TRANSACTION_READ_UNCOMMITTED, readOnly = true
     ) {
-        lateinit var topTent: List<Long>
-        lateinit var topTable: List<Long>
-        lateinit var topTableware: List<Long>
-        lateinit var topAccessory: List<Long>
-        lateinit var topOther: List<Long>
         val topFavoriteMaps = mutableListOf<Map<String,List<Product>>>()
 
         val topFavoriteKeys = redisTemplate.keys("*")

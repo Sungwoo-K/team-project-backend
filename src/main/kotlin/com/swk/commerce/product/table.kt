@@ -7,14 +7,6 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.context.annotation.Configuration
 
-object Orders: Table() {
-    val id = long("id").autoIncrement()
-    val userId = long("user_id")
-    val isPermission = varchar("is_permission", 30)
-    val productId = reference("product_id", Products.id)
-    val quantity = integer("quantity")
-    override val primaryKey = PrimaryKey(id)
-}
 
 object Products: Table() {
     val id = long("id")
@@ -34,12 +26,20 @@ object ProductImages:Table() {
     val uuidFileName = varchar("uuid", 100).uniqueIndex()
 }
 
+object Companys:Table() {
+    val id = long("id")
+    val name = varchar("name", 100)
+    val representativeName = varchar("representative_name", 100)
+    val intro = varchar("intro", 100)
+    val imageUuidName = varchar("image_uuid_name", 100)
+}
+
 @Configuration
 class PostTableSetup(private val database: Database) {
     @PostConstruct
     fun migrateSchema() {
         transaction(database) {
-            SchemaUtils.createMissingTablesAndColumns(Products,ProductImages,Orders)
+            SchemaUtils.createMissingTablesAndColumns(Products,ProductImages,Companys)
         }
     }
 }

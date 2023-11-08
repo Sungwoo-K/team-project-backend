@@ -20,6 +20,7 @@ import java.nio.file.StandardCopyOption
 
 @Service
 class ProductService(private val productClient: ProductClient,
+    private val companyClient: CompanyClient,
     private val redisTemplate: RedisTemplate<String,String>) {
     private val mapper = jacksonObjectMapper()
     private val FILE_PATH = "files/product"
@@ -28,11 +29,11 @@ class ProductService(private val productClient: ProductClient,
     fun scheduledFetchTopFavoriteProduct() {
         val result = productClient.getTopFavoriteProduct();
 
-        lateinit var topTent:List<Long>
-        lateinit var topTable:List<Long>
-        lateinit var topTableware:List<Long>
-        lateinit var topAccessory:List<Long>
-        lateinit var topOther:List<Long>
+        var topTent:List<Long> = listOf()
+        var topTable:List<Long> = listOf()
+        var topTableware:List<Long> = listOf()
+        var topAccessory:List<Long> = listOf()
+        var topOther:List<Long> = listOf()
 
         println(result)
         for(product in result) {
@@ -124,6 +125,46 @@ class ProductService(private val productClient: ProductClient,
                     it[isActive] = result.isActive
                     it[maximumPurchaseQuantity] = result.maximumPurchaseQuantity
                     it[discountRate] = result.discountRate
+                }
+            }
+
+        }
+
+    }
+
+    @RabbitListener(queues = ["company-register"])
+    fun handleCompanyData(companyData : String) {
+        val dirPath:Path = Paths.get(FILE_PATH)
+        if(!Files.exists(dirPath)) {
+            Files.createDirectories(dirPath)
+        }
+
+        val result:Company = mapper.readValue(companyData)
+
+        if(result.imageUuidName !== "") {
+            val resource: Resource = companyClient.getCompanyImage(result.id ,result.imageUuidName)
+            val uuidFilePath = dirPath.resolve(result.imageUuidName)
+            Files.copy(resource.inputStream, uuidFilePath, StandardCopyOption.REPLACE_EXISTING)
+        }
+
+        val findCompany = Companys.select{Companys.id eq result.id}
+
+        transaction {
+            if(findCompany.empty()) {
+                Companys.insert {
+                    it[id] = result.id
+                    it[name] = result.name
+                    it[representativeName] = result.representativeName
+                    it[intro] = result.intro
+                    it[imageUuidName] = result.imageUuidName
+                }
+            } else {
+                Companys.update({Companys.id eq result.id}){
+                    it[id] = result.id
+                    it[name] = result.name
+                    it[representativeName] = result.representativeName
+                    it[intro] = result.intro
+                    it[imageUuidName] = result.imageUuidName
                 }
             }
 

@@ -18,3 +18,11 @@ data class Product(
     val mainImageUuidName : String,
     var imageUuidName: List<String>
 )
+
+data class Company(
+    val id:Long,
+    val name:String,
+    val representativeName:String,
+    val intro:String,
+    val imageUuidName:String
+)
