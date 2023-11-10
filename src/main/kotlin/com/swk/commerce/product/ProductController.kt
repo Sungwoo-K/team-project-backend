@@ -47,13 +47,13 @@ class ProductController(private val resourceLoader: ResourceLoader, private val 
                 mainImageUuidName = it[Products.mainImageUuidName],
                 imageUuidName = emptyList()
             )
-        }.singleOrNull()
+        }.singleOrNull() ?: return@transaction ResponseEntity.status(HttpStatus.NOT_FOUND).build()
 
         val images = ProductImages.select(ProductImages.productId eq id).map {
             it[ProductImages.uuidFileName]
         }
 
-        result?.imageUuidName = images;
+        result.imageUuidName = images;
 
         return@transaction ResponseEntity.status(HttpStatus.OK).body(result);
     }
@@ -63,7 +63,6 @@ class ProductController(private val resourceLoader: ResourceLoader, private val 
     :ResponseEntity<Page<Product>> = transaction(
         Connection.TRANSACTION_READ_UNCOMMITTED, readOnly = true
     ){
-        println(category)
 
 
         if(category == "null") {
@@ -89,7 +88,9 @@ class ProductController(private val resourceLoader: ResourceLoader, private val 
             return@transaction ResponseEntity.status(HttpStatus.OK).body(PageImpl(result, PageRequest.of(page,size),totalCount));
         }
 
-        val result = Products.select(Products.category eq category).map {
+        val result = Products.select(Products.category eq category)
+            .orderBy(Products.id to SortOrder.DESC)
+            .limit(size, offset = (size * page).toLong()).map {
                 Product(
                     id = it[Products.id],
                     productBrand = it[Products.productBrand],
@@ -114,11 +115,12 @@ class ProductController(private val resourceLoader: ResourceLoader, private val 
     :ResponseEntity<Page<Product>> = transaction(
         Connection.TRANSACTION_READ_UNCOMMITTED, readOnly = true
     ){
-        println(category)
 
 
         if(category == "null") {
-            val result = Products.select(Products.discountRate greater 0).map {
+            val result = Products.select(Products.discountRate greater 0)
+                .orderBy(Products.id to SortOrder.DESC)
+                .limit(size, offset = (size * page).toLong()).map {
                     Product(
                         id = it[Products.id],
                         productBrand = it[Products.productBrand],
@@ -138,7 +140,9 @@ class ProductController(private val resourceLoader: ResourceLoader, private val 
             return@transaction ResponseEntity.status(HttpStatus.OK).body(PageImpl(result, PageRequest.of(page,size),totalCount))
         }
 
-        val result = Products.select{(Products.discountRate greater 0) and (Products.category eq category)}.map {
+        val result = Products.select{(Products.discountRate greater 0) and (Products.category eq category)}
+            .orderBy(Products.id to SortOrder.DESC)
+            .limit(size, offset = (size * page).toLong()).map {
                 Product(
                     id = it[Products.id],
                     productBrand = it[Products.productBrand],
@@ -156,6 +160,108 @@ class ProductController(private val resourceLoader: ResourceLoader, private val 
 
         val totalCount = Products.select{(Products.discountRate greater 0) and (Products.category eq category)}.count()
         return@transaction ResponseEntity.status(HttpStatus.OK).body(PageImpl(result, PageRequest.of(page,size),totalCount))
+    }
+
+
+    @GetMapping("search")
+    fun getPagingSearchProducts(@RequestParam keyword: String,@RequestParam category: String,@RequestParam page:Int,@RequestParam size:Int)
+            :ResponseEntity<Page<Product>> = transaction(
+        Connection.TRANSACTION_READ_UNCOMMITTED, readOnly = true
+    ){
+
+
+        if(category == "null") {
+            val result = Products.select{(Products.productBrand like "%${keyword}%") or (Products.productName like "%${keyword}%")}
+                .orderBy(Products.id to SortOrder.DESC)
+                .limit(size, offset = (size * page).toLong()).map {
+                Product(
+                    id = it[Products.id],
+                    productBrand = it[Products.productBrand],
+                    productName = it[Products.productName],
+                    productPrice = it[Products.productPrice],
+                    category = it[Products.category],
+                    productDescription = it[Products.productDescription],
+                    isActive = it[Products.isActive],
+                    maximumPurchaseQuantity = it[Products.maximumPurchaseQuantity],
+                    discountRate = it[Products.discountRate],
+                    mainImageUuidName = it[Products.mainImageUuidName],
+                    imageUuidName = emptyList()
+                )
+            }
+
+            val totalCount = Products.select{(Products.productBrand like "%${keyword}%") or (Products.productName like "%${keyword}%")}.count()
+            return@transaction ResponseEntity.status(HttpStatus.OK).body(PageImpl(result, PageRequest.of(page,size),totalCount))
+        }
+
+        val result = Products.select{((Products.productBrand like "%${keyword}%") or (Products.productName like "%${keyword}%")) and (Products.category eq category)}
+            .orderBy(Products.id to SortOrder.DESC)
+            .limit(size, offset = (size * page).toLong()).map {
+            Product(
+                id = it[Products.id],
+                productBrand = it[Products.productBrand],
+                productName = it[Products.productName],
+                productPrice = it[Products.productPrice],
+                category = it[Products.category],
+                productDescription = it[Products.productDescription],
+                isActive = it[Products.isActive],
+                maximumPurchaseQuantity = it[Products.maximumPurchaseQuantity],
+                discountRate = it[Products.discountRate],
+                mainImageUuidName = it[Products.mainImageUuidName],
+                imageUuidName = emptyList()
+            )
+        }
+
+        val totalCount = Products.select{((Products.productBrand like "%${keyword}%") or (Products.productName like "%${keyword}%")) and (Products.category eq category)}.count()
+        return@transaction ResponseEntity.status(HttpStatus.OK).body(PageImpl(result, PageRequest.of(page,size),totalCount))
+    }
+
+
+    @GetMapping("brands/items/{brandName}")
+    fun getBrandsProduct(@PathVariable brandName:String,@RequestParam page:Int,@RequestParam size:Int)
+            :ResponseEntity<Page<Product>> = transaction(
+        Connection.TRANSACTION_READ_UNCOMMITTED, readOnly = true
+    ){
+        val result = Products.select(Products.productBrand eq brandName)
+            .orderBy(Products.id to SortOrder.DESC)
+            .limit(size, offset = (size * page).toLong()).map {
+            Product(
+                id = it[Products.id],
+                productBrand = it[Products.productBrand],
+                productName = it[Products.productName],
+                productPrice = it[Products.productPrice],
+                category = it[Products.category],
+                productDescription = it[Products.productDescription],
+                isActive = it[Products.isActive],
+                maximumPurchaseQuantity = it[Products.maximumPurchaseQuantity],
+                discountRate = it[Products.discountRate],
+                mainImageUuidName = it[Products.mainImageUuidName],
+                imageUuidName = emptyList()
+            )
+        }
+
+        val totalCount = Products.select(Products.productBrand eq brandName).count()
+        return@transaction ResponseEntity.status(HttpStatus.OK).body(PageImpl(result, PageRequest.of(page,size),totalCount))
+    }
+    @GetMapping("/brands/{brandName}")
+    fun getCompany(@PathVariable brandName:String): ResponseEntity<Company> = transaction(
+        Connection.TRANSACTION_READ_UNCOMMITTED, readOnly = true
+    ) {
+
+        val result = Companys.select(Companys.name eq brandName).map {
+            Company(
+                id = it[Companys.id],
+                name = it[Companys.name],
+                representativeName = it[Companys.representativeName],
+                intro = it[Companys.intro],
+                imageUuidName = it[Companys.imageUuidName]
+            )
+        }.singleOrNull()
+
+        if(result == null) {
+            return@transaction ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+        }
+
+        return@transaction ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
     @GetMapping("/top-favorite")
