@@ -17,6 +17,7 @@ class WebMvcConfig : WebMvcConfigurer {
                 "http://localhost:5000",
                 "http://192.168.0.30:5000",
                 "http://192.168.100.109:5000",
+                "http://192.168.100.159:5000"
             )
             .allowedMethods("*")
     }
