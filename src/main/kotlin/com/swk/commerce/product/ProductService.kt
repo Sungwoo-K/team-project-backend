@@ -142,7 +142,7 @@ class ProductService(private val productClient: ProductClient,
         val result:Company = mapper.readValue(companyData)
 
         if(result.imageUuidName !== "") {
-            val resource: Resource = companyClient.getCompanyImage(result.id ,result.imageUuidName)
+            val resource: Resource = companyClient.getCompanyImage(result.imageUuidName)
             val uuidFilePath = dirPath.resolve(result.imageUuidName)
             Files.copy(resource.inputStream, uuidFilePath, StandardCopyOption.REPLACE_EXISTING)
         }
