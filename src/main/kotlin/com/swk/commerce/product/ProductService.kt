@@ -8,7 +8,6 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.amqp.rabbit.annotation.RabbitListener
-import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -35,21 +34,20 @@ class ProductService(private val productClient: ProductClient,
         var topAccessory:List<Long> = listOf()
         var topOther:List<Long> = listOf()
 
-        println(result)
         for(product in result) {
-            if(product.category === "tent") {
+            if(product.category == "tent") {
                 topTent = product.ids;
             }
-            if(product.category === "table" ) {
+            if(product.category == "table" ) {
                 topTable = product.ids
             }
-            if(product.category === "tableware" ) {
+            if(product.category == "tableware" ) {
                 topTableware = product.ids
             }
-            if(product.category === "accessory" ) {
+            if(product.category == "accessory" ) {
                 topAccessory = product.ids
             }
-            if(product.category === "other") {
+            if(product.category == "other") {
                 topOther = product.ids
             }
         }
@@ -93,7 +91,6 @@ class ProductService(private val productClient: ProductClient,
             }
         }
 
-        println(filesList)
 
         val findProduct = Products.select{Products.id eq result.id}
 
