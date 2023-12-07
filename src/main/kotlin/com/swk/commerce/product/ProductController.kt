@@ -24,7 +24,7 @@ import java.sql.Connection
 
 
 @RestController
-@RequestMapping("/product")
+@RequestMapping("/api/product")
 class ProductController(private val resourceLoader: ResourceLoader, private val redisTemplate: RedisTemplate<String,String>) {
     private val FILE_PATH = "files/product"
     private val mapper = jacksonObjectMapper()

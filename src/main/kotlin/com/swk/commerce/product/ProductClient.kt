@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable
 
 
 
-@FeignClient(name = "productClient", url = "http://192.168.100.151:8080")
+@FeignClient(name = "productClient")
 interface ProductClient {
 
     @GetMapping("/product/topFiveProduct")

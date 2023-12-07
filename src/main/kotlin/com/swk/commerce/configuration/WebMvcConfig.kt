@@ -17,7 +17,9 @@ class WebMvcConfig : WebMvcConfigurer {
                 "http://localhost:5000",
                 "http://192.168.0.30:5000",
                 "http://192.168.100.109:5000",
-                "http://192.168.100.159:5000"
+                "http://192.168.100.159:5000",
+                "https://d3a0qva4kjxuze.cloudfront.net",
+                "ec2-43-200-11-107.ap-northeast-2.compute.amazonaws.com"
             )
             .allowedMethods("*")
     }
