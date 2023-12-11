@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable
 @FeignClient(name = "companyClient")
 interface CompanyClient {
 
-    @GetMapping("/user/files/{dynamicPart}")
+    @GetMapping("/api/user/files/{dynamicPart}")
     fun getCompanyImage(@PathVariable dynamicPart:String) : Resource
 
 }

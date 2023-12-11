@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.PathVariable
 @FeignClient(name = "productClient")
 interface ProductClient {
 
-    @GetMapping("/product/topFiveProduct")
+    @GetMapping("/api/product/topFiveProduct")
     fun getTopFavoriteProduct() : List<TopFavoriteProduct>
 
-    @GetMapping("/product/files/{dynamicPart}")
+    @GetMapping("/api/product/files/{dynamicPart}")
     fun getProductImage(@PathVariable dynamicPart:String) : Resource
 }
 
